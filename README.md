@@ -34,4 +34,4 @@ README.md               — Dokumentasi proyek
 
 ## Cara Menjalankan
 
-Buka `SIG-HIV-Jombang.html` di browser (koneksi internet diperlukan untuk Leaflet dan OpenStreetMap).
+Buka https://jannyskharisma.github.io/Pemetaan/
