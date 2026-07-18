@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>SIG-HIV Jombang | Peta Sebaran HIV Kabupaten Jombang</title>
+<!-- Leaflet CSS — library peta interaktif open-source -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" />
+<!-- CSS kustom — gaya visual seluruh halaman -->
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+<!-- Topbar — logo/brand + navigasi utama -->
+<div class="topbar">
+  <div class="brand">
+    <!-- Logo SIG-HIV Jombang -->
+    <img class="mark" src="logo.png" alt="SIG-HIV Jombang">
+    <div class="name">
+      <b>SIG-HIV Jombang</b>
+      <span>Dinas Kesehatan Kabupaten Jombang</span>
+    </div>
+  </div>
+  <!-- Navigasi tab — 5 menu utama -->
+  <nav id="nav">
+    <button data-view="beranda" class="active">Beranda</button>
+    <button data-view="peta">Peta Sebaran</button>
+    <button data-view="data">Data Kasus</button>
+    <button data-view="edukasi">Edukasi</button>
+    <button data-view="tentang">Tentang</button>
+  </nav>
+</div>
+
+<main>
+
+  <!-- ================= BERANDA (Halaman Utama) ================= -->
+  <section class="view active" id="view-beranda">
+    <!-- Hero section — judul, deskripsi, CTA, dan 4 kartu statistik -->
+    <div class="hero">
+      <div>
+        <h1>Peta Sebaran Kasus HIV<br>Kabupaten Jombang</h1>
+        <p>Sistem Informasi Geografis untuk memvisualisasikan persebaran kasus HIV per kecamatan di Kabupaten Jombang, mendukung Dinas Kesehatan dalam mengidentifikasi wilayah berisiko, serta menyediakan edukasi bagi masyarakat guna menekan stigma.</p>
+        <button class="cta" onclick="goTo('peta')">Buka Peta Sebaran →</button>
+      </div>
+      <!-- 4 kartu statistik cepat: kasus baru, kecamatan, prevalensi tertinggi, kumulatif -->
+      <div class="stat-grid">
+        <div class="stat-card"><div class="num">280</div><div class="lbl">Kasus baru 2025</div></div>
+        <div class="stat-card"><div class="num">21</div><div class="lbl">Kecamatan terpetakan</div></div>
+        <div class="stat-card"><div class="num">Mojowarno</div><div class="lbl">Prevalensi tertinggi 2025</div></div>
+        <div class="stat-card"><div class="num">2.169</div><div class="lbl">Kumulatif kasus s.d. 2025</div></div>
+      </div>
+    </div>
+
+    <!-- Fitur utama — 3 kartu informasi fitur aplikasi -->
+    <h2 class="section-title">Fitur Utama</h2>
+    <p class="section-sub">Dirancang untuk dua kelompok pengguna: petugas Dinas Kesehatan dan masyarakat umum.</p>
+    <div class="card-row">
+      <div class="info-card">
+        <span class="tag">Peta Interaktif</span>
+        <h3>Visualisasi Spasial</h3>
+        <p>Peta persebaran kasus HIV per kecamatan dengan penanda ukuran dan warna mengikuti tingkat prevalensi, dapat difilter per tahun (2023–2025).</p>
+      </div>
+      <div class="info-card">
+        <span class="tag">Data Kasus</span>
+        <h3>Rekapitulasi &amp; Pencarian</h3>
+        <p>Tabel rekapitulasi kasus dan prevalensi per kecamatan, dapat diurutkan dan dicari untuk mendukung pengambilan keputusan.</p>
+      </div>
+      <div class="info-card">
+        <span class="tag">Edukasi</span>
+        <h3>Informasi HIV/AIDS</h3>
+        <p>Materi edukasi seputar penularan, pencegahan, dan penanganan HIV untuk mengurangi miskonsepsi dan stigma di masyarakat.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= PETA SEBARAN ================= -->
+  <section class="view" id="view-peta">
+    <h2 class="section-title">Peta Sebaran Kasus HIV per Kecamatan</h2>
+    <p class="section-sub">Ukuran dan warna lingkaran merepresentasikan prevalensi kasus per 1.000 penduduk pada tahun terpilih.</p>
+    <div class="map-wrap">
+      <!-- Kolom kiri: peta + toolbar -->
+      <div>
+        <!-- Toggle tahun — filter data per tahun -->
+        <div class="map-toolbar">
+          <div class="year-toggle" id="yearToggle">
+            <button data-year="2023">2023</button>
+            <button data-year="2024">2024</button>
+            <button data-year="2025" class="active">2025</button>
+          </div>
+          <div style="font-family:-apple-system,sans-serif;font-size:12px;color:#6B776F;">Klik penanda untuk detail kecamatan</div>
+        </div>
+        <!-- Container peta Leaflet — diisi oleh JS -->
+        <div id="map"></div>
+      </div>
+      <!-- Panel samping — ringkasan data dan 5 kecamatan tertinggi -->
+      <div class="side-panel" id="sidePanel">
+        <h3 id="spName">Kabupaten Jombang</h3>
+        <div class="muted">Ringkasan tahun <span id="spYear">2025</span></div>
+        <div class="kv"><span>Total kasus</span><b id="spTotal">280</b></div>
+        <div class="kv"><span>5 kecamatan tertinggi</span><b></b></div>
+        <div id="spRank"></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ================= DATA KASUS ================= -->
+  <section class="view" id="view-data">
+    <h2 class="section-title">Rekapitulasi Data Kasus</h2>
+    <p class="section-sub">Data kasus dan prevalensi HIV per kecamatan, tahun 2023–2025.</p>
+    <!-- Toolbar tabel: pencarian + filter tahun -->
+    <div class="table-tools">
+      <input type="text" id="searchBox" placeholder="Cari kecamatan...">
+      <select id="tableYear">
+        <option value="k2023">Kasus 2023</option>
+        <option value="k2024">Kasus 2024</option>
+        <option value="k2025" selected>Kasus 2025</option>
+      </select>
+    </div>
+    <!-- Tabel data — diisi dan diurutkan secara dinamis oleh JS -->
+    <table>
+      <thead>
+        <tr>
+          <th data-key="nama">Kecamatan</th>
+          <th data-key="penduduk">Penduduk</th>
+          <th data-key="__kasus">Kasus</th>
+          <th data-key="__prev">Prevalensi /1.000</th>
+          <th data-key="__cat">Kategori</th>
+        </tr>
+      </thead>
+      <tbody id="tableBody"></tbody>
+    </table>
+  </section>
+
+  <!-- ================= EDUKASI HIV/AIDS ================= -->
+  <section class="view" id="view-edukasi">
+    <h2 class="section-title">Edukasi HIV/AIDS</h2>
+    <p class="section-sub">Informasi dasar untuk masyarakat guna mengurangi miskonsepsi dan stigma.</p>
+
+    <!-- FAQ 1: Definisi HIV dan AIDS -->
+    <details class="faq" open>
+      <summary>Apa itu HIV dan AIDS?</summary>
+      <p>HIV (Human Immunodeficiency Virus) adalah virus yang menyerang sel CD4 dan melemahkan sistem kekebalan tubuh. Jika tidak ditangani, infeksi HIV dapat berkembang menjadi AIDS (Acquired Immunodeficiency Syndrome), tahap ketika tubuh sudah sangat rentan terhadap infeksi lain.</p>
+    </details>
+    <!-- FAQ 2: Cara penularan -->
+    <details class="faq">
+      <summary>Bagaimana HIV menular?</summary>
+      <p>HIV menular melalui hubungan seksual berisiko tanpa pengaman, penggunaan jarum suntik bersama, transfusi darah yang tidak aman, serta dari ibu ke anak selama kehamilan, persalinan, atau menyusui.</p>
+    </details>
+    <!-- FAQ 3: Mitos kontak sosial -->
+    <details class="faq">
+      <summary>Apakah HIV menular lewat kontak sosial sehari-hari?</summary>
+      <p>Tidak. HIV tidak menular melalui berjabat tangan, berpelukan, berbagi makanan atau minuman, penggunaan toilet bersama, gigitan nyamuk, maupun kontak sosial biasa lainnya.</p>
+    </details>
+    <!-- FAQ 4: Pencegahan -->
+    <details class="faq">
+      <summary>Bagaimana cara pencegahan HIV?</summary>
+      <p>Pencegahan meliputi perilaku seksual yang aman, tidak berbagi jarum suntik, skrining rutin terutama bagi kelompok berisiko, serta pemeriksaan bagi ibu hamil untuk mencegah penularan ke bayi.</p>
+    </details>
+    <!-- FAQ 5: Layanan di Jombang -->
+    <details class="faq">
+      <summary>Ke mana harus memeriksakan diri di Jombang?</summary>
+      <p>Layanan tes dan konseling HIV tersedia di Puskesmas dan RSUD di seluruh wilayah Kabupaten Jombang. Pemeriksaan dan pengobatan bagi ODHIV diberikan tanpa pungut biaya.</p>
+    </details>
+    <!-- FAQ 6: Stigma -->
+    <details class="faq">
+      <summary>Mengapa stigma terhadap ODHIV perlu dihindari?</summary>
+      <p>Stigma membuat masyarakat enggan memeriksakan diri sehingga kasus terlambat terdeteksi dan penanganan menjadi kurang efektif. Dukungan tanpa diskriminasi membantu Orang dengan HIV (ODHIV) menjalani pengobatan secara konsisten.</p>
+    </details>
+  </section>
+
+  <!-- ================= TENTANG ================= -->
+  <section class="view" id="view-tentang">
+    <h2 class="section-title">Tentang Sistem</h2>
+    <div class="about-box">
+      <p><b>SIG-HIV Jombang</b> adalah aplikasi pemetaan kasus HIV berbasis web dengan implementasi Sistem Informasi Geografis (SIG), dikembangkan sebagai studi kasus di Kabupaten Jombang, Jawa Timur. Aplikasi ini dirancang untuk mendukung Dinas Kesehatan dalam mengidentifikasi wilayah dengan risiko tinggi sekaligus memberikan edukasi bagi masyarakat.</p>
+
+      <h3>Sumber Data</h3>
+      <ul>
+        <li>Total kasus HIV/AIDS baru per tahun Kabupaten Jombang (2023: 212 kasus; 2024: 310 kasus; 2025: 280 kasus) — Dinas Kesehatan Kabupaten Jombang, sebagaimana dilaporkan Radar Jombang, Kabar Jombang, dan Tribun Jatim.</li>
+        <li>Jumlah penduduk Kabupaten Jombang ± 1,37 juta jiwa (BPS, 2024), dengan Kecamatan Jombang sebagai wilayah berpenduduk terbanyak dan Kecamatan Ngusikan tersedikit.</li>
+      </ul>
+
+      <h3>Teknologi</h3>
+      <ul>
+        <li>Peta interaktif: Leaflet.js</li>
+        <li>Front-end: HTML, CSS, JavaScript</li>
+        <li>Metode pengembangan: Rational Unified Process (RUP) — Inception, Elaboration, Construction, Transition</li>
+      </ul>
+
+      <!-- Disclaimer — data per kecamatan bersifat ilustratif -->
+      <div class="disclaimer">
+        <b>Catatan penting:</b> Total kasus per tahun pada aplikasi ini bersumber dari laporan resmi Dinas Kesehatan Kabupaten Jombang yang dipublikasikan media. Namun, <b>distribusi kasus per kecamatan pada peta dan tabel adalah data estimasi/ilustratif</b> untuk keperluan demonstrasi sistem, karena rincian resmi tingkat kecamatan tidak dipublikasikan secara terbuka. Estimasi disusun mengikuti pola pemberitaan (Kecamatan Jombang, Ngoro, dan Mojowarno konsisten dilaporkan sebagai wilayah dengan temuan tertinggi). Untuk implementasi nyata, data granular resmi dari Dinas Kesehatan wajib digunakan sebagai pengganti data ilustratif ini.
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer>SIG-HIV Jombang — Prototipe Tugas Kuliah, Sistem Informasi Geografis Kesehatan · Data ilustratif per-kecamatan, agregat tahunan berbasis laporan resmi</footer>
+
+<!-- Leaflet JS — library peta interaktif -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js"></script>
+<!-- JS kustom — dataset, navigasi, peta, tabel, dan inisialisasi -->
+<script src="js/script.js"></script>
+</body>
+</html>
