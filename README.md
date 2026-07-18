@@ -1,4 +1,4 @@
-# SIG-HIV Jombang
+# Pemetaan HIV Jombang
 
 **Sistem Informasi Geografis — Peta Sebaran Kasus HIV Kabupaten Jombang**
 
@@ -14,7 +14,7 @@ Aplikasi web SIG untuk memvisualisasikan persebaran kasus HIV per kecamatan di K
 ## Struktur File
 
 ```
-SIG-HIV-Jombang.html   — Struktur utama halaman (HTML)
+index.html              — Struktur utama halaman (HTML)
 css/style.css           — Seluruh gaya visual (dipisah dari HTML)
 js/script.js            — Seluruh logika JavaScript (dipisah dari HTML)
 README.md               — Dokumentasi proyek
