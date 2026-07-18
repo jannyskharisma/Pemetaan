@@ -54,8 +54,8 @@ document.getElementById('nav').addEventListener('click', e => {
   if (e.target.tagName === 'BUTTON') goTo(e.target.dataset.view);
 });
 
-/* ---------------- Peta Leaflet ---------------- */
-let map, markers = [];
+/* ---------------- Peta Leaflet (Choropleth) ---------------- */
+let map, geoLayer, legendControl;
 
 /* catInfo(prev) — mengembalikan label, kelas CSS, dan warna berdasarkan nilai prevalensi */
 function catInfo(prev) {
@@ -64,34 +64,75 @@ function catInfo(prev) {
   return { label: "Rendah", cls: "low", color: "#1F7A72" };
 }
 
+/* cariData(nama) — mencari data kecamatan berdasarkan nama (dipakai untuk mencocokkan dengan GeoJSON) */
+function cariData(nama) {
+  return KECAMATAN_DATA.find(d => d.nama === nama);
+}
+
 /* initMap() — inisialisasi peta Leaflet di <div id="map"> */
 function initMap() {
-  map = L.map('map', { scrollWheelZoom: false }).setView([-7.545, 112.28], 10.5);
+  map = L.map('map').setView([-7.545, 112.28], 10.3);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '&copy; OpenStreetMap contributors', maxZoom: 16
   }).addTo(map);
   drawYear('2025');
+  addLegend();
 }
 
-/* drawYear(year) — gambar marker lingkaran untuk tahun tertentu */
+/* styleFeature(feature, year) — menentukan warna fill poligon kecamatan berdasarkan prevalensi tahun terpilih */
+function styleFeature(feature, year) {
+  const d = cariData(feature.properties.nama);
+  const info = d ? catInfo(d['p' + year]) : { color: '#CCCCCC' };
+  return {
+    fillColor: info.color,
+    weight: 1.5,
+    color: '#FFFFFF',
+    fillOpacity: 0.75,
+  };
+}
+
+/* drawYear(year) — gambar layer choropleth kecamatan untuk tahun tertentu */
 function drawYear(year) {
-  markers.forEach(m => map.removeLayer(m));
-  markers = [];
-  const kKey = 'k' + year, pKey = 'p' + year;
-  const maxP = Math.max(...KECAMATAN_DATA.map(d => d[pKey]));
-  KECAMATAN_DATA.forEach(d => {
-    const prev = d[pKey];
-    const info = catInfo(prev);
-    const radius = 6 + (prev / maxP) * 20;
-    const m = L.circleMarker([d.lat, d.lng], {
-      radius, color: info.color, weight: 1.5, fillColor: info.color, fillOpacity: 0.55
-    }).addTo(map);
-    /* Popup saat marker diklik — menampilkan detail kecamatan */
-    m.bindPopup(`<b>${d.nama}</b><br>Tahun ${year}<br>Kasus: ${d[kKey]}<br>Penduduk: ${d.penduduk.toLocaleString('id-ID')}<br>Prevalensi: ${prev}/1.000<br>Kategori: ${info.label}`);
-    m.on('click', () => updateSidePanel(d, year));
-    markers.push(m);
-  });
+  if (geoLayer) map.removeLayer(geoLayer);
+
+  geoLayer = L.geoJSON(KECAMATAN_GEOJSON, {
+    style: feature => styleFeature(feature, year),
+    onEachFeature: (feature, layer) => {
+      const d = cariData(feature.properties.nama);
+      if (!d) return;
+      const kKey = 'k' + year, pKey = 'p' + year;
+      const info = catInfo(d[pKey]);
+      layer.bindPopup(`<b>${d.nama}</b><br>Tahun ${year}<br>Kasus: ${d[kKey]}<br>Penduduk: ${d.penduduk.toLocaleString('id-ID')}<br>Prevalensi: ${d[pKey]}/1.000<br>Kategori: ${info.label}`);
+      layer.on({
+        mouseover: e => e.target.setStyle({ weight: 3, color: '#155A54', fillOpacity: 0.9 }),
+        mouseout: e => geoLayer.resetStyle(e.target),
+        click: () => updateSidePanel(d, year),
+      });
+    },
+  }).addTo(map);
+
   updateSidePanel(null, year);
+}
+
+/* addLegend() — menambahkan kotak legenda kategori prevalensi ke peta */
+function addLegend() {
+  legendControl = L.control({ position: 'bottomright' });
+  legendControl.onAdd = function () {
+    const div = L.DomUtil.create('div', 'legend-box');
+    div.innerHTML = `
+      <div style="font-weight:600;margin-bottom:6px;">Kategori Prevalensi</div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+        <span style="width:12px;height:12px;background:#A1402F;display:inline-block;border-radius:2px;"></span> Tinggi (&ge;0,25/1.000)
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;margin-bottom:3px;">
+        <span style="width:12px;height:12px;background:#B9902E;display:inline-block;border-radius:2px;"></span> Sedang (0,18&ndash;0,25/1.000)
+      </div>
+      <div style="display:flex;align-items:center;gap:6px;">
+        <span style="width:12px;height:12px;background:#1F7A72;display:inline-block;border-radius:2px;"></span> Rendah (&lt;0,18/1.000)
+      </div>`;
+    return div;
+  };
+  legendControl.addTo(map);
 }
 
 /* updateSidePanel(d, year) — perbarui panel samping peta dengan ringkasan/peringkat */
